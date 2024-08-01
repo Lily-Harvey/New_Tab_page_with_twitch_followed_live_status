@@ -2,10 +2,10 @@ html,
 body,
 #root {
   height: 100%;
+  margin: 0;
 }
 
 body {
-  margin: 0;
   text-align: center;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
     'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
@@ -18,8 +18,112 @@ body {
   height: 100%;
   background: linear-gradient(to bottom right, #7b4397, #dc2430);
   color: white;
-  text-align: center;
   display: flex;
+  flex-direction: column; /* Stack children vertically */
+  align-items: center; /* Center content horizontally */
+  text-align: center;
+}
+
+.greeting-container {
+  margin-top: 20%; /* Add space above the greeting if needed */
+  display: flex;
+  flex-direction: column;
   justify-content: center;
   align-items: center;
+  width: 100%;
+}
+
+.followed {
+  position: fixed; /* Fix to the left side */
+  top: 20px; /* Distance from the top */
+  left: 20px; /* Distance from the left */
+  width: 200px; /* Set a fixed width */
+  padding: 10px;
+  background-color: rgba(70, 55, 55, 0.8); /* Slight background to stand out */
+  border-radius: 8px;
+  box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.3); /* Shadow for better visibility */
+  overflow-y: auto; /* Scroll if the list is long */
+}
+
+.followed-channels-list {
+  list-style-type: none;
+  padding: 0;
+  margin: 0;
+}
+
+.followed-channels-list li {
+  margin-bottom: 5px;
+}
+
+/* Style for links in the followed channels list */
+.followed-channels-button{
+  color: #f5f5f5;
+  background-color: transparent;
+  border: none;
+  cursor: pointer;
+  font-size: 16px;
+  text-align: left;
+  padding: 5px;
+  font-weight: 550;
+}
+
+.followed-channels-button:hover {
+  scale: 1.1;
+}
+
+/* Prevent visited links from changing color */
+.followed-channels-list a:visited {
+  color: #1e90ff; /* Ensure visited links are the same color as unvisited links */
+}
+
+.followed-channels-list a:active {
+  color: #1e90ff; /* Ensure active links (when clicked) are the same color */
+}
+
+.settings {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  cursor: pointer;
+  padding: 5px;
+  font-size: 30px;
+  background-color: transparent;
+  margin: 3px;
+  border: 0.5px solid black;
+  border-radius: 5px;
+}
+
+.settings:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+/* Style for the dropdown container */
+.dropdown {
+  position: absolute;
+  top: 40px; /* Adjust this to position it correctly relative to the button */
+  right: 10px; /* Position at the right edge with some padding */
+  background-color: white;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  box-shadow: 0px 8px 16px 0px rgba(0, 0, 0, 0.2);
+  z-index: 1000; /* Ensures the dropdown appears on top of other elements */
+}
+
+/* Style for the unordered list inside the dropdown */
+.dropdown ul {
+  list-style-type: none;
+  padding: 0;
+  margin: 0;
+}
+
+/* Style for each list item */
+.dropdown li {
+  padding: 8px 16px;
+  cursor: pointer;
+  color: black;
+}
+
+/* Hover effect for list items */
+.dropdown li:hover {
+  background-color: #f1f1f1;
 }
