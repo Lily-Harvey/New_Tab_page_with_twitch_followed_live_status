@@ -180,9 +180,8 @@ Browser extension/
 │
 │
 public/
-├── index.html
-├── manifest.json
-├── robots.txt
+├── index.html // The main HTML file, serves as a template for the hosted React app
+├── manifest.json // Web app manifest file (for PWA purposes, if applicable)
 │
 src/
 │
@@ -195,6 +194,7 @@ src/
 ├── index.js // Entry point of the application
 ├── index.css // Style for the application
 └── .env // Environment variables for Twitch API
+
 ```
 
 ## Contributing
