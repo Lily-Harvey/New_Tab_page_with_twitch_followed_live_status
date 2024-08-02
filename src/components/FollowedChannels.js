@@ -14,7 +14,7 @@ const FollowedChannels = ({ followedChannels, refreshFollowedChannels, loading }
           <button
             className="followed-channels-button"
             // Open the channel's Twitch page when clicked
-            onClick={() => window.location.href =`https://www.twitch.tv/${channel.broadcaster_name}`}
+            onClick={() => window.open(`https://www.twitch.tv/${channel.broadcaster_name}`, '_blank')}
           >
             {channel.broadcaster_name}&#128308;
           </button>
