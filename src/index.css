@@ -1,198 +1,222 @@
-html,
-body,
-#root {
-  height: 100%;
-  margin: 0;
+/* Apply full height and remove default margin for html, body, and root elements */
+html, body, #root {
+  height: 100%; /* Ensure full height for these elements */
+  margin: 0; /* Remove default margin */
 }
 
+/* Basic styling for the body element */
 body {
-  text-align: center;
+  text-align: center; /* Center text alignment */
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
     'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-    sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+    sans-serif; /* Use a system font stack for better performance and consistency */
+  -webkit-font-smoothing: antialiased; /* Improve font rendering on WebKit browsers */
+  -moz-osx-font-smoothing: grayscale; /* Improve font rendering on Firefox on macOS */
 }
 
+/* Styling for the main app container */
 .App {
-  height: 100%;
-  background: linear-gradient(to bottom right, #7b4397, #dc2430);
-  color: white;
+  height: 100%; /* Full height */
+  background: linear-gradient(to bottom right, #7b4397, #dc2430); /* Gradient background */
+  color: white; /* White text color */
   display: flex;
   flex-direction: column; /* Stack children vertically */
   align-items: center; /* Center content horizontally */
-  text-align: center;
+  text-align: center; /* Center text alignment */
 }
 
+/* Container for greeting content */
 .greeting-container {
-  margin-top: 20%; /* Add space above the greeting if needed */
+  margin-top: 20%; /* Space above the container for positioning */
   display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  width: 100%;
+  flex-direction: column; /* Stack children vertically */
+  justify-content: center; /* Center content vertically */
+  align-items: center; /* Center content horizontally */
+  width: 100%; /* Full width */
 }
 
+/* Container for followed channels with fixed positioning */
 .followed {
-  position: fixed; /* Fix to the left side */
-  top: 20px; /* Distance from the top */
-  left: 20px; /* Distance from the left */
-  width: 200px; /* Set a fixed width */
-  padding: 10px;
-  background-color: rgba(70, 55, 55, 0.8); /* Slight background to stand out */
-  border-radius: 8px;
+  position: fixed; /* Fixes the element in place */
+  top: 20px; /* Distance from the top of the viewport */
+  left: 20px; /* Distance from the left of the viewport */
+  width: 200px; /* Fixed width */
+  padding: 10px; /* Padding inside the container */
+  background-color: rgba(70, 55, 55, 0.8); /* Slightly transparent background */
+  border-radius: 8px; /* Rounded corners */
   box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.3); /* Shadow for better visibility */
-  overflow-y: auto; /* Scroll if the list is long */
+  overflow-y: auto; /* Scroll if content overflows */
 }
 
+/* Style for the list of followed channels */
 .followed-channels-list {
-  list-style-type: none;
-  padding: 0;
-  margin: 0;
+  list-style-type: none; /* Remove default list styling */
+  padding: 0; /* Remove padding */
+  margin: 0; /* Remove margin */
 }
 
+/* Style for each list item in the followed channels list */
 .followed-channels-list li {
-  margin-bottom: 5px;
+  margin-bottom: 5px; /* Space between list items */
 }
 
-/* Style for links in the followed channels list */
-.followed-channels-button{
-  color: #f5f5f5;
-  background-color: transparent;
-  border: none;
-  cursor: pointer;
-  font-size: 16px;
-  text-align: left;
-  padding: 5px;
-  font-weight: 550;
+/* Style for buttons in the followed channels list */
+.followed-channels-button {
+  color: #f5f5f5; /* Light text color */
+  background-color: transparent; /* Transparent background */
+  border: none; /* Remove border */
+  cursor: pointer; /* Pointer cursor on hover */
+  font-size: 16px; /* Font size */
+  text-align: left; /* Left align text */
+  padding: 5px; /* Padding inside button */
+  font-weight: 550; /* Font weight */
 }
 
+/* Style for hovered state of followed channels buttons */
 .followed-channels-button:hover {
-  scale: 1.1;
+  scale: 1.1; /* Slightly enlarge the button on hover */
 }
 
-/* Prevent visited links from changing color */
+/* Ensure visited and active links have consistent color */
 .followed-channels-list a:visited {
-  color: #1e90ff; /* Ensure visited links are the same color as unvisited links */
+  color: #1e90ff; /* Visited link color */
 }
 
 .followed-channels-list a:active {
-  color: #1e90ff; /* Ensure active links (when clicked) are the same color */
+  color: #1e90ff; /* Active link color */
 }
 
+/* Style for the settings button */
 .settings {
-  position: absolute;
-  top: 10px;
-  right: 10px;
-  cursor: pointer;
-  padding: 5px;
-  font-size: 30px;
-  background-color: transparent;
-  margin: 3px;
-  border: 0.5px solid black;
-  border-radius: 5px;
+  position: absolute; /* Absolute positioning */
+  top: 10px; /* Distance from the top */
+  right: 10px; /* Distance from the right */
+  cursor: pointer; /* Pointer cursor on hover */
+  padding: 5px; /* Padding inside the button */
+  font-size: 30px; /* Font size */
+  background-color: transparent; /* Transparent background */
+  margin: 3px; /* Margin around the button */
+  border: 0.5px solid black; /* Border around the button */
+  border-radius: 5px; /* Rounded corners */
 }
 
+/* Style for hovered state of settings button */
 .settings:hover {
-  background-color: rgba(255, 255, 255, 0.1);
-  scale: 1.05;
+  background-color: rgba(255, 255, 255, 0.1); /* Slight background color on hover */
+  scale: 1.05; /* Slightly enlarge the button on hover */
 }
 
 /* Style for the dropdown container */
 .dropdown {
-  position: absolute;
-  top: 63px; /* Adjust this to position it correctly relative to the button */
-  right: 10px; /* Position at the right edge with some padding */
-  background-color: transparent;
-  border: 1px solid black;
-  border-radius: 4px;
-  margin: 1px;
-  padding: 12px;
-  box-shadow: 0px 8px 16px 0px rgba(0, 0, 0, 0.2);
-  z-index: 1000; /* Ensures the dropdown appears on top of other elements */
+  position: absolute; /* Absolute positioning */
+  top: 63px; /* Distance from the top of the viewport (adjustable) */
+  right: 10px; /* Distance from the right of the viewport */
+  background-color: transparent; /* Transparent background */
+  border: 1px solid black; /* Border around the dropdown */
+  border-radius: 4px; /* Rounded corners */
+  margin: 1px; /* Margin around the dropdown */
+  padding: 12px; /* Padding inside the dropdown */
+  box-shadow: 0px 8px 16px 0px rgba(0, 0, 0, 0.2); /* Shadow for better visibility */
+  z-index: 1000; /* Ensure it appears on top of other elements */
 }
 
-/* Style for the unordered list inside the dropdown */
+/* Style for unordered list inside the dropdown */
 .dropdown ul {
-  list-style-type: none;
-  padding: 0;
-  margin: 0;
+  list-style-type: none; /* Remove default list styling */
+  padding: 0; /* Remove padding */
+  margin: 0; /* Remove margin */
 }
 
-/* Style for each list item */
+/* Style for each list item inside the dropdown */
 .dropdown li {
-  padding: 5px 16px;
-  cursor: pointer;
-  color: black;
+  padding: 5px 16px; /* Padding inside list items */
+  cursor: pointer; /* Pointer cursor on hover */
+  color: black; /* Text color */
 }
 
+/* Style for name input field */
 .name-input {
-  padding: 8px;
-  margin: 8px;
-  border: 1px solid white;
-  border-radius: 4px;
-  background-color: rgba(0, 0, 0, 0);
-  color: white;
+  padding: 8px; /* Padding inside the input */
+  margin: 8px; /* Margin around the input */
+  border: 1px solid white; /* Border around the input */
+  border-radius: 4px; /* Rounded corners */
+  background-color: rgba(0, 0, 0, 0); /* Transparent background */
+  color: white; /* Text color */
 }
 
-.setting-dropdown-button{
-  color: #fffafa;
-  background-color: rgba(0, 0, 0, 0.13);
-  border: 1px solid black;
-  cursor: pointer;
-  font-size: 16px;
-  text-align: left;
-  padding: 5px;
-  font-weight: 550;
+/* Style for dropdown buttons */
+.setting-dropdown-button {
+  color: #fffafa; /* Light text color */
+  background-color: rgba(0, 0, 0, 0.13); /* Slightly transparent background */
+  border: 1px solid black; /* Border around the button */
+  cursor: pointer; /* Pointer cursor on hover */
+  font-size: 16px; /* Font size */
+  text-align: left; /* Left align text */
+  padding: 5px; /* Padding inside the button */
+  font-weight: 550; /* Font weight */
 }
 
-/* Style for list items on hover */
+/* Style for hovered state of dropdown buttons */
 .setting-dropdown-button:hover {
-  scale: 1.1;
+  scale: 1.1; /* Slightly enlarge the button on hover */
 }
 
-.save-button{
-  margin-right: 5px;
+/* Additional styling for specific buttons */
+.save-button {
+  margin-right: 5px; /* Space to the right of the button */
 }
 
-.clear-button{
-  margin-left: 5px;
+.clear-button {
+  margin-left: 5px; /* Space to the left of the button */
 }
 
+.image-button-preview {
+  margin-right: 5px; /* Space to the right of the button */
+}
+
+.image-button-clear {
+  margin-left: 5px; /* Space to the left of the button */
+}
+
+/* Container for refresh button and spinner */
 .refresh-container {
   display: flex;
-  flex-direction: column; /* Stack contents vertically */
-  align-items: center;
-  margin-top: 10px; /* Adjust spacing as needed */
+  flex-direction: column; /* Stack children vertically */
+  align-items: center; /* Center content horizontally */
+  margin-top: 10px; /* Space above the container */
 }
 
+/* Style for the refresh button */
 .refresh-button {
-  padding: 8px 16px;
-  font-size: 14px;
-  border: 1px solid white;
-  border-radius: 4px;
-  background-color: #0071f300;
-  color: #fff;
-  cursor: pointer;
-  transition: background-color 0.3s;
+  padding: 8px 16px; /* Padding inside the button */
+  font-size: 14px; /* Font size */
+  border: 1px solid white; /* Border around the button */
+  border-radius: 4px; /* Rounded corners */
+  background-color: #0071f300; /* Background color */
+  color: #fff; /* Text color */
+  cursor: pointer; /* Pointer cursor on hover */
+  transition: background-color 0.3s; /* Smooth background color transition */
 }
 
+/* Style for disabled state of the refresh button */
 .refresh-button:disabled {
-  background-color: #ccc;
-  cursor: not-allowed;
+  background-color: #ccc; /* Background color when disabled */
+  cursor: not-allowed; /* Indicate that the button is not clickable */
 }
 
+/* Style for the spinner element */
 .spinner {
-  border: 4px solid rgba(0, 0, 0, 0.1); /* Light grey */
-  border-left: 4px solid #000; /* Black */
-  border-radius: 50%;
-  width: 16px;
-  height: 16px;
-  animation: spin 1s linear infinite;
-  margin-left: 8px; /* Spacing between button and spinner */
+  border: 4px solid rgba(0, 0, 0, 0.1); /* Light grey border */
+  border-left: 4px solid #000; /* Black border on the left side */
+  border-radius: 50%; /* Make it a circle */
+  width: 16px; /* Width of the spinner */
+  height: 16px; /* Height of the spinner */
+  animation: spin 1s linear infinite; /* Infinite spin animation */
+  margin-left: 8px; /* Space between the button and spinner */
 }
 
+/* Keyframes for spinner animation */
 @keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  0% { transform: rotate(0deg); } /* Start rotation */
+  100% { transform: rotate(360deg); } /* End rotation */
 }

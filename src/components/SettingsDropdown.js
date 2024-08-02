@@ -1,5 +1,6 @@
 import React, { useRef } from "react";
 
+// SettingsDropdown component handles user settings and image preview within a dropdown menu
 const SettingsDropdown = ({
   name,
   previewImage,
@@ -13,25 +14,32 @@ const SettingsDropdown = ({
   clearSettings,
   clearPreviewImage
 }) => {
+  // Reference to the hidden file input for image upload
   const fileInputRef = useRef(null);
 
   return (
+    // Render the dropdown menu only if showDropdown is true
     showDropdown && (
       <div className="dropdown">
         <ul>
+          {/* Input field for changing the user's name */}
           <li>
             Name:
             <input
-             className="name-input"
+              className="name-input"
               type="text"
               value={name}
-              onChange={handleNameChange}
+              onChange={handleNameChange} // Handler for name changes
               placeholder="Enter your name"
             />
           </li>
+          
+          {/* Button to trigger file input click for image upload */}
           <li onClick={() => fileInputRef.current.click()} style={{ cursor: "pointer" }}>
             <button className="setting-dropdown-button">Upload Image</button>
           </li>
+          
+          {/* Display the preview image if available */}
           {previewImage && (
             <li>
               <img
@@ -41,29 +49,37 @@ const SettingsDropdown = ({
               />
             </li>
           )}
+          
+          {/* Display preview and clear buttons if a preview image is set */}
           {previewImage && (
             <ul>
-            <li>
-              <button className="setting-dropdown-button" onClick={previewImageCallback}>Preview</button>
-            </li>
-            <li>
-              <button className="setting-dropdown-button" onClick={clearPreviewImage}>Clear</button>
-            </li>
+              <li>
+                <button className="setting-dropdown-button image-button-preview" onClick={previewImageCallback}>Preview</button>
+                <button className="setting-dropdown-button image-button-clear" onClick={clearPreviewImage}>Clear</button>
+              </li>
             </ul>
           )}
+          
+          {/* Button to start OAuth flow with Twitch */}
           <li>
             <button className="setting-dropdown-button" onClick={startOAuthFlow}>Authorize with Twitch</button>
           </li>
-            <button className="setting-dropdown-button save-button" onClick={saveSettings}>Save</button>
-            {(localStorage.getItem("name") || localStorage.getItem("backgroundImage")) && (
+          
+          {/* Button to save settings */}
+          <button className="setting-dropdown-button save-button" onClick={saveSettings}>Save</button>
+          
+          {/* Display clear button if name or background image is stored in local storage */}
+          {(localStorage.getItem("name") || localStorage.getItem("backgroundImage")) && (
             <button className="setting-dropdown-button clear-button" onClick={clearSettings}>Clear</button>
-            )}
+          )}
         </ul>
+        
+        {/* Hidden file input for image selection */}
         <input
           type="file"
           ref={fileInputRef}
           style={{ display: "none" }}
-          onChange={handleImageChange}
+          onChange={handleImageChange} // Handler for image file selection
         />
       </div>
     )
