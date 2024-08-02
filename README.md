@@ -153,6 +153,8 @@ This project includes browser extensions that allow you to set this application 
     3. Enable **Developer mode** by toggling the switch in the top right corner.
     4. Click on **Load unpacked**.
     5. Navigate to the folder containing the `index.html` and `manifest.json` files and select it.
+    6. To ensure that all features are working, you need to disable the **chrome://flags/#third-party-storage-partitioning** setting.
+
 
 3. **Using the Extension**: Once loaded, opening a new tab will display the React application.
 
@@ -175,6 +177,12 @@ Browser extension/
 ├── firefox/
 │ ├── index.html // Displays the React app in an iframe as a new tab
 │ ├── manifest.json // Defines the extension's metadata for Firefox
+│
+│
+public/
+├── index.html
+├── manifest.json
+├── robots.txt
 │
 src/
 │
