@@ -1,4 +1,3 @@
-"""
 # New tab homepage extension
 
 This React application allows users to display a personalized greeting and view the live status of their followed Twitch channels after authorizing with their Twitch account. Users can also customize the app's background image and their display name.
@@ -32,11 +31,11 @@ To use this application, you need to create a Twitch app to obtain your `CLIENT_
 
 Create a `.env` file in the root directory of your project with the following variables:
 
-\`\`\`env
+```env
 REACT_APP_CLIENT_ID=your_twitch_client_id
 REACT_APP_CLIENT_SECRET=your_twitch_client_secret
 REACT_APP_REDIRECT_URI=your_redirect_uri
-\`\`\`
+```
 
 Replace `your_twitch_client_id`, `your_twitch_client_secret`, and `your_redirect_uri` with the values from your Twitch app.
 
@@ -166,7 +165,7 @@ Make sure to choose the correct folder and follow the instructions specific to y
 
 Here is a brief overview of the project's file structure:
 
-\`\`\`
+```
 Browser extension/
 │
 ├── chrome/
@@ -188,7 +187,7 @@ src/
 ├── index.js // Entry point of the application
 ├── index.css // Style for the application
 └── .env // Environment variables for Twitch API
-\`\`\`
+```
 
 ## Contributing
 
