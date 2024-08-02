@@ -82,6 +82,10 @@ const App = () => {
     localStorage.setItem("accessToken", accessToken);
     setAccessToken(accessToken);
     fetchFollowedChannels(accessToken);
+    if (window.opener){
+      window.opener.postMessage('refresh', '*'); // Send a message to the parent window
+      window.close(); // Close the popup
+    }
   }, []);
 
   const handleOAuthRedirect = useCallback(() => {
@@ -101,84 +105,92 @@ const App = () => {
       setAccessToken(savedAccessToken);
       const handlePageLoad = () => fetchFollowedChannels(savedAccessToken);
       window.addEventListener('load', handlePageLoad);
-
+      
       return () => window.removeEventListener('load', handlePageLoad);
     }
     handleOAuthRedirect();
   }, [handleOAuthRedirect, loadSettings]);
-
+  
+  useEffect(() => {
+    window.addEventListener('message', (event) => {
+      if (event.data === 'refresh') {
+        window.location.reload();
+      }
+    });
+  }, []);
+  
   const toggleDropdown = useCallback((event) => {
     event.preventDefault();
     setShowDropdown(prev => !prev);
   }, []);
-
+  
   const handleNameChange = useCallback((event) => {
     const value = event.target.value;
     setName(value.charAt(0).toUpperCase() + value.slice(1));
   }, []);
-
+  
   const handleImageClick = () => {
     fileInputRef.current.click();
   };
-
+  
   const handleImageChange = useCallback((event) => {
     const file = event.target.files[0];
     if (!file) return;
-
+    
     const reader = new FileReader();
     reader.onloadend = () => {
       const img = new Image();
       img.src = reader.result;
-
+      
       img.onload = () => {
         const canvas = document.createElement("canvas");
         const ctx = canvas.getContext("2d");
         const maxWidth = 1200;
         const maxHeight = 800;
         let { width, height } = img;
-
+        
         if (width > maxWidth || height > maxHeight) {
           const ratio = Math.min(maxWidth / width, maxHeight / height);
           width *= ratio;
           height *= ratio;
         }
-
+        
         canvas.width = width;
         canvas.height = height;
         ctx.drawImage(img, 0, 0, width, height);
-
+        
         const resizedBase64Image = canvas.toDataURL("image/jpeg", 0.9);
         setPreviewImage(resizedBase64Image);
       };
     };
-
+    
     reader.readAsDataURL(file);
   }, []);
-
+  
   const handlePreviewImage = useCallback(() => {
     setBackgroundImage(previewImage);
   }, [previewImage]);
-
+  
   const clearPreviewImage = useCallback(() => {
     setPreviewImage("");
     setBackgroundImage("");
   }, []);
-
+  
   const saveSettings = useCallback(() => {
     const capitalizedName = name.charAt(0).toUpperCase() + name.slice(1);
     localStorage.setItem("name", capitalizedName);
-
+    
     if (previewImage) {
       localStorage.setItem("backgroundImage", previewImage);
       setBackgroundImage(previewImage);
     }
-
+    
     setName(capitalizedName);
     setShowDropdown(false);
     setPreviewImage("");
     alert("Settings saved!");
   }, [name, previewImage]);
-
+  
   const clearSettings = useCallback(() => {
     localStorage.removeItem("name");
     localStorage.removeItem("backgroundImage");
@@ -190,45 +202,42 @@ const App = () => {
     setAccessToken("");
     setFollowedChannels([]);
   }, []);
-
+  
   const startOAuthFlow = () => {
     const url = `${AUTHORIZATION_ENDPOINT}?client_id=${CLIENT_ID}&redirect_uri=${REDIRECT_URI}&response_type=code&scope=user:read:email+user:read:follows`;
     const newTab = window.open(url, "_blank");
     window.focus();
     newTab.blur();
-    setTimeout(() => {
-      newTab.close();
-    }, 1000);
   };
-
+  
   const fetchFollowedChannels = async (accessToken) => {
     try {
       setLoading(true); // Set loading to true
-
+      
       const userInfoResponse = await fetch(USER_INFO_ENDPOINT, {
         headers: {
           "Client-ID": CLIENT_ID,
           "Authorization": `Bearer ${accessToken}`,
         },
       });
-
+      
       if (!userInfoResponse.ok) throw new Error('User info fetch failed');
-
+      
       const userInfo = await userInfoResponse.json();
       const userId = userInfo.data[0].id;
-
+      
       const followedChannelsResponse = await fetch(`${FOLLOWED_CHANNELS_BY_USER_ID_ENDPOINT}?user_id=${userId}`, {
         headers: {
           "Client-ID": CLIENT_ID,
           "Authorization": `Bearer ${accessToken}`,
         },
       });
-
+      
       if (!followedChannelsResponse.ok) throw new Error('Followed channels fetch failed');
-
+      
       const followedChannelsData = await followedChannelsResponse.json();
       const followedChannels = followedChannelsData.data;
-
+      
       const liveChannels = await Promise.all(followedChannels.map(async (channel) => {
         const streamStatusResponse = await fetch(`${STREAMS_STATUS_ENDPOINT}?user_id=${channel.broadcaster_id}`, {
           headers: {
@@ -236,16 +245,16 @@ const App = () => {
             "Authorization": `Bearer ${accessToken}`,
           },
         });
-
+        
         if (!streamStatusResponse.ok) throw new Error('Stream status fetch failed');
-
+        
         const streamStatusData = await streamStatusResponse.json();
         return {
           ...channel,
           isLive: streamStatusData.data.length > 0,
         };
       }));
-
+      
       localStorage.setItem("liveChannels", JSON.stringify(liveChannels));
       setFollowedChannels(liveChannels);
     } catch (error) {
@@ -254,12 +263,13 @@ const App = () => {
       setLoading(false); // Set loading to false
     }
   };
-
+  
   const refreshFollowedChannels = useCallback(() => {
     if (accessToken) {
       fetchFollowedChannels(accessToken);
     }
   }, [accessToken]);
+  
 
   return (
     <div className="App" style={{ background: backgroundImage ? `url(${backgroundImage}) no-repeat center center/cover` : "" }}>
