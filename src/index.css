@@ -95,16 +95,19 @@ body {
 
 .settings:hover {
   background-color: rgba(255, 255, 255, 0.1);
+  scale: 1.05;
 }
 
 /* Style for the dropdown container */
 .dropdown {
   position: absolute;
-  top: 40px; /* Adjust this to position it correctly relative to the button */
+  top: 63px; /* Adjust this to position it correctly relative to the button */
   right: 10px; /* Position at the right edge with some padding */
-  background-color: white;
-  border: 1px solid #ccc;
+  background-color: transparent;
+  border: 1px solid black;
   border-radius: 4px;
+  margin: 1px;
+  padding: 12px;
   box-shadow: 0px 8px 16px 0px rgba(0, 0, 0, 0.2);
   z-index: 1000; /* Ensures the dropdown appears on top of other elements */
 }
@@ -118,12 +121,78 @@ body {
 
 /* Style for each list item */
 .dropdown li {
-  padding: 8px 16px;
+  padding: 5px 16px;
   cursor: pointer;
   color: black;
 }
 
-/* Hover effect for list items */
-.dropdown li:hover {
-  background-color: #f1f1f1;
+.name-input {
+  padding: 8px;
+  margin: 8px;
+  border: 1px solid white;
+  border-radius: 4px;
+  background-color: rgba(0, 0, 0, 0);
+  color: white;
+}
+
+.setting-dropdown-button{
+  color: #fffafa;
+  background-color: rgba(0, 0, 0, 0.13);
+  border: 1px solid black;
+  cursor: pointer;
+  font-size: 16px;
+  text-align: left;
+  padding: 5px;
+  font-weight: 550;
+}
+
+/* Style for list items on hover */
+.setting-dropdown-button:hover {
+  scale: 1.1;
+}
+
+.save-button{
+  margin-right: 5px;
+}
+
+.clear-button{
+  margin-left: 5px;
+}
+
+.refresh-container {
+  display: flex;
+  flex-direction: column; /* Stack contents vertically */
+  align-items: center;
+  margin-top: 10px; /* Adjust spacing as needed */
+}
+
+.refresh-button {
+  padding: 8px 16px;
+  font-size: 14px;
+  border: 1px solid white;
+  border-radius: 4px;
+  background-color: #0071f300;
+  color: #fff;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.refresh-button:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+}
+
+.spinner {
+  border: 4px solid rgba(0, 0, 0, 0.1); /* Light grey */
+  border-left: 4px solid #000; /* Black */
+  border-radius: 50%;
+  width: 16px;
+  height: 16px;
+  animation: spin 1s linear infinite;
+  margin-left: 8px; /* Spacing between button and spinner */
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
 }

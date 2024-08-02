@@ -1,0 +1,21 @@
+{
+  "manifest_version": 2,
+  "name": "New Tab Page with Twitch Integration",
+  "version": "1.0",
+  "description": "Opens a new tab with Twitch integration to view currently live channels from followed list",
+  "chrome_url_overrides": {
+    "newtab": "index.html"
+  },
+  "author": "Lily Harvey",
+  "permissions": [
+    "tabs",
+    "storage",
+    "activeTab"
+  ],
+  "applications": {
+    "gecko": {
+      "id": "<Enter UUID>",
+      "strict_min_version": "58.0"
+    }
+  }
+}

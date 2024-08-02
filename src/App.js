@@ -1,10 +1,12 @@
-import React from "react";
-
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import Greeting from './components/Greeting';
+import SettingsDropdown from './components/SettingsDropdown';
+import FollowedChannels from './components/FollowedChannels';
 
 // Replace these constants with your Twitch app details
-const CLIENT_ID = "hrkyfsumttf4th56bzy3a2pjxlz47p";
-const CLIENT_SECRET = "8q4gngmnse18lkvepyr63p6namodvn"; // Replace with your client secret
-const REDIRECT_URI = "http://localhost:3000"; // Ensure this matches exactly with your registered URI
+const CLIENT_ID = process.env.REACT_APP_CLIENT_ID;
+const CLIENT_SECRET = process.env.REACT_APP_CLIENT_SECRET;
+const REDIRECT_URI = process.env.REACT_APP_REDIRECT_URI;
 
 // API Endpoints
 const AUTHORIZATION_ENDPOINT = "https://id.twitch.tv/oauth2/authorize";
@@ -20,88 +22,110 @@ const greetings = {
   night: "Good night",
 };
 
-class App extends React.Component {
-  constructor() {
-    super();
-    this.state = {
-      greeting: greetings.morning,
-      showDropdown: false,
-      name: "",
-      backgroundImage: "",
-      previewImage: "",
-      accessToken: "",
-      followedChannels: [],
+const App = () => {
+  const [greeting, setGreeting] = useState(greetings.morning);
+  const [showDropdown, setShowDropdown] = useState(false);
+  const [name, setName] = useState("");
+  const [backgroundImage, setBackgroundImage] = useState("");
+  const [previewImage, setPreviewImage] = useState("");
+  const [accessToken, setAccessToken] = useState("");
+  const [followedChannels, setFollowedChannels] = useState([]);
+  const [loading, setLoading] = useState(false); // New state for loading
+
+  const fileInputRef = useRef(null);
+
+  useEffect(() => {
+    const updateGreeting = () => {
+      const now = new Date();
+      const hour = now.getHours();
+      let newGreeting;
+      if (hour > 6 && hour < 12) newGreeting = greetings.morning;
+      else if (hour >= 12 && hour < 17) newGreeting = greetings.noon;
+      else if (hour >= 17 && hour < 20) newGreeting = greetings.evening;
+      else newGreeting = greetings.night;
+      setGreeting(newGreeting);
     };
-    this.startTime = this.startTime.bind(this);
-    this.toggleDropdown = this.toggleDropdown.bind(this);
-    this.handleNameChange = this.handleNameChange.bind(this);
-    this.handleImageClick = this.handleImageClick.bind(this);
-    this.handleImageChange = this.handleImageChange.bind(this);
-    this.previewImage = this.previewImage.bind(this);
-    this.saveSettings = this.saveSettings.bind(this);
-    this.clearSettings = this.clearSettings.bind(this);
-    this.startOAuthFlow = this.startOAuthFlow.bind(this);
-    this.handleOAuthRedirect = this.handleOAuthRedirect.bind(this);
-    this.exchangeCodeForToken = this.exchangeCodeForToken.bind(this);
-    this.fetchFollowedChannels = this.fetchFollowedChannels.bind(this);
-    this.checkLiveStatus = this.checkLiveStatus.bind(this);
-  }
 
-  componentDidMount() {
-    this.startTime();
-    this.loadSettings();
-    const savedAccessToken = localStorage.getItem('accessToken');
-  if (savedAccessToken) {
-    this.setState({ accessToken: savedAccessToken }, () => {
-      // Fetch followed channels after setting the token
-      this.fetchFollowedChannels();
-    });
-  }
+    updateGreeting();
+    const intervalId = setInterval(updateGreeting, 1000);
+    return () => clearInterval(intervalId);
+  }, []);
 
-  this.handleOAuthRedirect(); // Check for OAuth token in the URL
-}
+  const loadSettings = useCallback(() => {
+    const savedName = localStorage.getItem("name");
+    const savedBackgroundImage = localStorage.getItem("backgroundImage");
 
+    if (savedName) setName(savedName);
+    if (savedBackgroundImage) setBackgroundImage(savedBackgroundImage);
 
-  startTime() {
-    let today = new Date();
-    let h = today.getHours();
-    let greeting;
-    if (h > 6 && h < 12) {
-      greeting = greetings.morning;
-    } else if (h >= 12 && h < 17) {
-      greeting = greetings.noon;
-    } else if (h >= 17 && h < 20) {
-      greeting = greetings.evening;
-    } else {
-      greeting = greetings.night;
+    const savedLiveChannels = localStorage.getItem("liveChannels");
+    if (savedLiveChannels) {
+      setFollowedChannels(JSON.parse(savedLiveChannels));
     }
-    this.setState({ greeting });
-    setTimeout(this.startTime, 1000);
-  }
+  }, []);
 
-  toggleDropdown(event) {
+  const exchangeCodeForToken = useCallback(async (code) => {
+    const response = await fetch(TOKEN_ENDPOINT, {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams({
+        client_id: CLIENT_ID,
+        client_secret: CLIENT_SECRET,
+        code,
+        grant_type: "authorization_code",
+        redirect_uri: REDIRECT_URI,
+      }),
+    });
+
+    const data = await response.json();
+    const accessToken = data.access_token;
+    localStorage.setItem("accessToken", accessToken);
+    setAccessToken(accessToken);
+    fetchFollowedChannels(accessToken);
+  }, []);
+
+  const handleOAuthRedirect = useCallback(() => {
+    const query = new URLSearchParams(window.location.search);
+    const code = query.get("code");
+
+    if (code) {
+      exchangeCodeForToken(code);
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+  }, [exchangeCodeForToken]);
+
+  useEffect(() => {
+    loadSettings();
+    const savedAccessToken = localStorage.getItem('accessToken');
+    if (savedAccessToken) {
+      setAccessToken(savedAccessToken);
+      const handlePageLoad = () => fetchFollowedChannels(savedAccessToken);
+      window.addEventListener('load', handlePageLoad);
+
+      return () => window.removeEventListener('load', handlePageLoad);
+    }
+    handleOAuthRedirect();
+  }, [handleOAuthRedirect, loadSettings]);
+
+  const toggleDropdown = useCallback((event) => {
     event.preventDefault();
-    this.setState((prevState) => ({
-      showDropdown: !prevState.showDropdown,
-    }));
-  }
+    setShowDropdown(prev => !prev);
+  }, []);
 
-  handleNameChange(event) {
+  const handleNameChange = useCallback((event) => {
     const value = event.target.value;
-    const capitalizedValue = value.charAt(0).toUpperCase() + value.slice(1);
-    this.setState({ name: capitalizedValue });
-  }
+    setName(value.charAt(0).toUpperCase() + value.slice(1));
+  }, []);
 
-  handleImageClick() {
-    this.fileInputRef.click();
-  }
+  const handleImageClick = () => {
+    fileInputRef.current.click();
+  };
 
-  handleImageChange(event) {
+  const handleImageChange = useCallback((event) => {
     const file = event.target.files[0];
     if (!file) return;
 
     const reader = new FileReader();
-
     reader.onloadend = () => {
       const img = new Image();
       img.src = reader.result;
@@ -109,296 +133,160 @@ class App extends React.Component {
       img.onload = () => {
         const canvas = document.createElement("canvas");
         const ctx = canvas.getContext("2d");
-
         const maxWidth = 1200;
         const maxHeight = 800;
-        let width = img.width;
-        let height = img.height;
+        let { width, height } = img;
 
         if (width > maxWidth || height > maxHeight) {
           const ratio = Math.min(maxWidth / width, maxHeight / height);
-          width = width * ratio;
-          height = height * ratio;
+          width *= ratio;
+          height *= ratio;
         }
 
         canvas.width = width;
         canvas.height = height;
-
         ctx.drawImage(img, 0, 0, width, height);
 
         const resizedBase64Image = canvas.toDataURL("image/jpeg", 0.9);
-
-        this.setState({ previewImage: resizedBase64Image });
+        setPreviewImage(resizedBase64Image);
       };
     };
 
     reader.readAsDataURL(file);
-  }
+  }, []);
 
-  previewImage() {
-    this.setState({ backgroundImage: this.state.previewImage });
-  }
+  const handlePreviewImage = useCallback(() => {
+    setBackgroundImage(previewImage);
+  }, [previewImage]);
 
-  saveSettings() {
-    const capitalizedName = this.state.name.charAt(0).toUpperCase() + this.state.name.slice(1);
+  const clearPreviewImage = useCallback(() => {
+    setPreviewImage("");
+    setBackgroundImage("");
+  }, []);
+
+  const saveSettings = useCallback(() => {
+    const capitalizedName = name.charAt(0).toUpperCase() + name.slice(1);
     localStorage.setItem("name", capitalizedName);
 
-    if (this.state.previewImage) {
-      localStorage.setItem("backgroundImage", this.state.previewImage);
-      this.setState({ backgroundImage: this.state.previewImage });
+    if (previewImage) {
+      localStorage.setItem("backgroundImage", previewImage);
+      setBackgroundImage(previewImage);
     }
 
-    this.setState({ name: capitalizedName, showDropdown: false, previewImage: "" });
+    setName(capitalizedName);
+    setShowDropdown(false);
+    setPreviewImage("");
     alert("Settings saved!");
-  }
+  }, [name, previewImage]);
 
-  clearSettings() {
+  const clearSettings = useCallback(() => {
     localStorage.removeItem("name");
     localStorage.removeItem("backgroundImage");
-    localStorage.removeItem("accessToken"); // Clear the access token
-    this.setState({ name: "", backgroundImage: "", previewImage: "", accessToken: "", followedChannels: [] });
-  }
-  
+    localStorage.removeItem("accessToken");
+    localStorage.removeItem("liveChannels");
+    setName("");
+    setBackgroundImage("");
+    setPreviewImage("");
+    setAccessToken("");
+    setFollowedChannels([]);
+  }, []);
 
-  loadSettings() {
-    const savedName = localStorage.getItem("name");
-    const savedBackgroundImage = localStorage.getItem("backgroundImage");
+  const startOAuthFlow = () => {
+    const url = `${AUTHORIZATION_ENDPOINT}?client_id=${CLIENT_ID}&redirect_uri=${REDIRECT_URI}&response_type=code&scope=user:read:email+user:read:follows`;
+    const newTab = window.open(url, "_blank");
+    window.focus();
+    newTab.blur();
+    setTimeout(() => {
+      newTab.close();
+    }, 1000);
+  };
 
-    if (savedName) {
-      this.setState({ name: savedName });
-    }
-
-    if (savedBackgroundImage) {
-      this.setState({ backgroundImage: savedBackgroundImage });
-    }
-  }
-
-  startOAuthFlow() {
-    const url = new URL(AUTHORIZATION_ENDPOINT);
-    url.searchParams.append('client_id', CLIENT_ID);
-    url.searchParams.append('response_type', 'code');
-    url.searchParams.append('redirect_uri', REDIRECT_URI);
-    url.searchParams.append('scope', 'user:read:follows'); // Ensure correct scope
-    window.location.href = url.toString();
-  }
-
-  async handleOAuthRedirect() {
-    const params = new URLSearchParams(window.location.search);
-    const code = params.get('code');
-
-    if (code) {
-      await this.exchangeCodeForToken(code);
-    }
-  }
-
-  async exchangeCodeForToken(code) {
+  const fetchFollowedChannels = async (accessToken) => {
     try {
-      const response = await fetch(TOKEN_ENDPOINT, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-        },
-        body: new URLSearchParams({
-          client_id: CLIENT_ID,
-          client_secret: CLIENT_SECRET,
-          code: code,
-          grant_type: 'authorization_code',
-          redirect_uri: REDIRECT_URI,
-        }),
-      });
-  
-      if (!response.ok) {
-        const errorData = await response.json();
-        console.error('Failed to fetch token:', errorData);
-        throw new Error(`Failed to fetch token: ${errorData.message}`);
-      }
-  
-      const data = await response.json();
-      console.log('Access Token Data:', data); // Log token data for debugging
-      
-      // Save access token to local storage
-      localStorage.setItem('accessToken', data.access_token);
-      this.setState({ accessToken: data.access_token }, () => {
-        // Fetch followed channels after obtaining the token
-        this.fetchFollowedChannels();
-      });
-  
-      // Optionally, clean up the URL
-      window.history.replaceState({}, document.title, window.location.pathname);
-    } catch (error) {
-      console.error('Error exchanging code for token:', error);
-    }
-  }
-  
+      setLoading(true); // Set loading to true
 
-  async getUserId(accessToken) {
-    try {
-      const response = await fetch(USER_INFO_ENDPOINT, {
+      const userInfoResponse = await fetch(USER_INFO_ENDPOINT, {
         headers: {
-          'Authorization': `Bearer ${accessToken}`,
-          'Client-ID': CLIENT_ID,
-          'Content-Type': 'application/json',
+          "Client-ID": CLIENT_ID,
+          "Authorization": `Bearer ${accessToken}`,
         },
       });
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        console.error('Failed to fetch user info:', errorData);
-        throw new Error(`Failed to fetch user info: ${errorData.message}`);
-      }
+      if (!userInfoResponse.ok) throw new Error('User info fetch failed');
 
-      const data = await response.json();
-      return data.data[0].id;
-    } catch (error) {
-      console.error('Error fetching user ID:', error);
-    }
-  }
+      const userInfo = await userInfoResponse.json();
+      const userId = userInfo.data[0].id;
 
-  async checkLiveStatus() {
-    const { followedChannels, accessToken } = this.state;
-    if (!accessToken || followedChannels.length === 0) return;
+      const followedChannelsResponse = await fetch(`${FOLLOWED_CHANNELS_BY_USER_ID_ENDPOINT}?user_id=${userId}`, {
+        headers: {
+          "Client-ID": CLIENT_ID,
+          "Authorization": `Bearer ${accessToken}`,
+        },
+      });
 
-    try {
-      const liveStatusPromises = followedChannels.map(async (channel) => {
-        const response = await fetch(`${STREAMS_STATUS_ENDPOINT}?user_id=${channel.broadcaster_id}`, {
+      if (!followedChannelsResponse.ok) throw new Error('Followed channels fetch failed');
+
+      const followedChannelsData = await followedChannelsResponse.json();
+      const followedChannels = followedChannelsData.data;
+
+      const liveChannels = await Promise.all(followedChannels.map(async (channel) => {
+        const streamStatusResponse = await fetch(`${STREAMS_STATUS_ENDPOINT}?user_id=${channel.broadcaster_id}`, {
           headers: {
-            'Authorization': `Bearer ${accessToken}`,
-            'Client-ID': CLIENT_ID,
+            "Client-ID": CLIENT_ID,
+            "Authorization": `Bearer ${accessToken}`,
           },
         });
 
-        if (!response.ok) {
-          const errorData = await response.json();
-          console.error('Failed to fetch stream status:', errorData);
-          throw new Error(`Failed to fetch stream status: ${errorData.message}`);
-        }
+        if (!streamStatusResponse.ok) throw new Error('Stream status fetch failed');
 
-        const data = await response.json();
+        const streamStatusData = await streamStatusResponse.json();
         return {
           ...channel,
-          isLive: data.data.length > 0,
+          isLive: streamStatusData.data.length > 0,
         };
-      });
+      }));
 
-      const channelsWithLiveStatus = await Promise.all(liveStatusPromises);
-      this.setState({ followedChannels: channelsWithLiveStatus });
-    } catch (error) {
-      console.error('Error checking live status:', error);
-    }
-  }
-
-  async fetchFollowedChannels() {
-    const { accessToken } = this.state;
-    if (!accessToken) return;
-  
-    try {
-      // Get the user ID
-      const userId = await this.getUserId(accessToken);
-      if (!userId) return;
-  
-      // Fetch followed channels using the user ID
-      const response = await fetch(`${FOLLOWED_CHANNELS_BY_USER_ID_ENDPOINT}?user_id=${userId}`, {
-        headers: {
-          'Authorization': `Bearer ${accessToken}`,
-          'Client-ID': CLIENT_ID,
-          'Content-Type': 'application/json',
-        },
-      });
-  
-      if (!response.ok) {
-        const errorData = await response.json();
-        console.error('Failed to fetch followed channels:', errorData);
-        throw new Error(`Failed to fetch followed channels: ${errorData.message}`);
-      }
-  
-      const data = await response.json();
-      console.log('Followed Channels Data:', data); // Log response data
-      this.setState({ followedChannels: data.data }, () => {
-        this.checkLiveStatus();
-      });
+      localStorage.setItem("liveChannels", JSON.stringify(liveChannels));
+      setFollowedChannels(liveChannels);
     } catch (error) {
       console.error('Error fetching followed channels:', error);
+    } finally {
+      setLoading(false); // Set loading to false
     }
-  }
-  
+  };
 
-  render() {
-    const { backgroundImage, previewImage, followedChannels, greeting, name, showDropdown } = this.state;
-    const appStyle = {
-      background: backgroundImage ? `url(${backgroundImage}) no-repeat center center/cover` : "",
-    };
+  const refreshFollowedChannels = useCallback(() => {
+    if (accessToken) {
+      fetchFollowedChannels(accessToken);
+    }
+  }, [accessToken]);
 
-    return (
-      <div className="App" style={appStyle}>
-        <button className="settings" onClick={this.toggleDropdown}>&#8942;</button>
-        {showDropdown && (
-          <div className="dropdown">
-            <ul>
-              <li>
-                Name:
-                <input
-                  type="text"
-                  value={this.state.name}
-                  onChange={this.handleNameChange}
-                  placeholder="Enter your name"
-                />
-              </li>
-              <li onClick={this.handleImageClick} style={{ cursor: "pointer" }}>
-                Image: <span style={{ textDecoration: "underline", color: "blue" }}>Upload</span>
-              </li>
-              {previewImage && (
-                <li>
-                  <img
-                    src={previewImage}
-                    alt="Preview"
-                    style={{ maxWidth: "200px", maxHeight: "200px" }}
-                  />
-                </li>
-              )}
-              {previewImage && (
-                <li>
-                  <button onClick={this.previewImage}>Preview</button>
-                </li>
-              )}
-              <li>
-                <button onClick={this.startOAuthFlow}>Authorize with Twitch</button>
-              </li>
-            </ul>
-            <button className="save-button" onClick={this.saveSettings}>
-              Save
-            </button>
-            {(localStorage.getItem("name") || localStorage.getItem("backgroundImage")) && (
-              <button className="clear-button" onClick={this.clearSettings}>
-                Clear
-              </button>
-            )}
-          </div>
-        )}
-        <div className="greeting-container">
-          <h1>{greeting} {name}!</h1>
-        </div>
-        {followedChannels.length > 0 && (
-          <div className="followed">
-            <h2>Live Channels:</h2>
-            <ul className="followed-channels-list">
-              {followedChannels.filter(channel => channel.isLive).map(channel => (
-                <li key={channel.broadcaster_id}>
-                  {/* Optionally use a button instead of an <a> */}
-                  <button className="followed-channels-button" onClick={() => window.open(`https://www.twitch.tv/${channel.broadcaster_name}`, '_blank')}><b></b>{channel.broadcaster_name}&#128308;</button>
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
-        <input
-          type="file"
-          ref={(ref) => (this.fileInputRef = ref)}
-          style={{ display: "none" }}
-          onChange={this.handleImageChange}
-        />
-      </div>
-    );
-  }
-}
+  return (
+    <div className="App" style={{ background: backgroundImage ? `url(${backgroundImage}) no-repeat center center/cover` : "" }}>
+      <button className="settings" onClick={toggleDropdown}>&#9881;</button>
+      <SettingsDropdown
+        name={name}
+        previewImage={previewImage}
+        showDropdown={showDropdown}
+        handleNameChange={handleNameChange}
+        handleImageClick={handleImageClick}
+        handleImageChange={handleImageChange}
+        previewImageCallback={handlePreviewImage}
+        startOAuthFlow={startOAuthFlow}
+        saveSettings={saveSettings}
+        clearSettings={clearSettings}
+        clearPreviewImage={clearPreviewImage} // Pass the new function
+      />
+      <Greeting greeting={greeting} name={name} />
+      {accessToken && (
+      <FollowedChannels
+        followedChannels={followedChannels}
+        refreshFollowedChannels={refreshFollowedChannels}
+        loading={loading} // Pass loading state
+      />
+      )}
+    </div>
+  );
+};
 
 export default App;
