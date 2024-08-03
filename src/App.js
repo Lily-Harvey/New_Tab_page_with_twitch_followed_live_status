@@ -5,16 +5,12 @@ import FollowedChannels from './components/FollowedChannels';
 
 // Replace these constants with your Twitch app details
 const CLIENT_ID = process.env.REACT_APP_CLIENT_ID; // Your Twitch app client ID
-const CLIENT_SECRET = process.env.REACT_APP_CLIENT_SECRET; // Your Twitch app client secret
-const REDIRECT_URI = process.env.REACT_APP_REDIRECT_URI; // Your Twitch app redirect URI
-
 // API Endpoints
-const AUTHORIZATION_ENDPOINT = "https://id.twitch.tv/oauth2/authorize"; // Twitch authorization endpoint
-const TOKEN_ENDPOINT = "https://id.twitch.tv/oauth2/token"; // Twitch token endpoint
 const FOLLOWED_CHANNELS_BY_USER_ID_ENDPOINT = "https://api.twitch.tv/helix/channels/followed"; // Twitch followed channels endpoint
 const USER_INFO_ENDPOINT = "https://api.twitch.tv/helix/users"; // Twitch user info endpoint
 const STREAMS_STATUS_ENDPOINT = "https://api.twitch.tv/helix/streams"; // Twitch stream status endpoint
-
+const GET_TOKENS_ENDPOINT = "http://localhost:3001/get-tokens"; // Local server endpoint to get tokens
+const AUTHORIZATION_ENDPOINT = "http://localhost:3001/auth"; // Local server endpoint to start OAuth flow
 // Greetings based on the time of the day 
 const greetings = {
   morning: "Good morning",
@@ -68,44 +64,6 @@ const App = () => {
     }
   }, []);
 
-  // Exchange the code for an access token
-  const exchangeCodeForToken = useCallback(async (code) => {
-    // Send a POST request to the token endpoint with the code and other required parameters
-    const response = await fetch(TOKEN_ENDPOINT, {
-      method: "POST",
-      headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      body: new URLSearchParams({
-        client_id: CLIENT_ID,
-        client_secret: CLIENT_SECRET,
-        code,
-        grant_type: "authorization_code",
-        redirect_uri: REDIRECT_URI,
-      }),
-    });
-
-    const data = await response.json(); // Parse the response
-    const accessToken = data.access_token; // Get the access token
-    localStorage.setItem("accessToken", accessToken); // Save the access token to local storage
-    setAccessToken(accessToken); // Set the access token state
-    fetchFollowedChannels(accessToken); // Fetch followed channels
-
-    if (window.opener){ // Check if the window has an opener
-      window.opener.postMessage('refresh', '*'); // Send a message to the parent window
-      window.close(); // Close the popup
-    }
-  }, []);
-
-  // Handle OAuth redirect from Twitch
-  const handleOAuthRedirect = useCallback(() => {
-    const query = new URLSearchParams(window.location.search); // Get the query parameters from the URL
-    const code = query.get("code"); // Get the code parameter
-
-    // If the code parameter is present, exchange it for an access token and remove it from the URL
-    if (code) {
-      exchangeCodeForToken(code);
-      window.history.replaceState({}, document.title, window.location.pathname);
-    }
-  }, [exchangeCodeForToken]); 
 
   // Initial setup when the app loads 
   useEffect(() => {
@@ -118,9 +76,8 @@ const App = () => {
       window.addEventListener('load', handlePageLoad);
       
       return () => window.removeEventListener('load', handlePageLoad); // Cleanup the event listener on unmount
-    }
-    handleOAuthRedirect(); // Handle OAuth redirect from Twitch
-  }, [handleOAuthRedirect, loadSettings]);
+    } // Handle OAuth redirect from Twitch
+  }, [ loadSettings]);
   
   // Add a message event listener to refresh the app when needed
   useEffect(() => {
@@ -131,6 +88,36 @@ const App = () => {
     });
   }, []);
   
+ // Check if URL is `/success` and fetch tokens
+ useEffect(() => {
+  const path = window.location.pathname;
+  if (path === '/success') {
+    const fetchTokens = async () => {
+      try {
+        const response = await fetch(GET_TOKENS_ENDPOINT);
+        if (!response.ok) throw new Error('Failed to fetch tokens');
+        const data = await response.json();
+        console.log(data);
+    
+        localStorage.setItem('accessToken', data.access_token);
+        localStorage.setItem('refreshToken', data.refresh_token);
+        localStorage.setItem('expiresIn', data.expires_in);
+        
+        setAccessToken(data.access_token);
+        fetchFollowedChannels(data.access_token);
+        window.history.pushState({}, null, '/'); // Remove the code from the URL
+      } catch (error) {
+        console.error('Error fetching tokens:', error);
+      }
+    };
+
+    fetchTokens();
+  }
+}, []); // Run effect only once on component mount
+
+  const handleOAuthFlow = useCallback(() => {
+    window.open(AUTHORIZATION_ENDPOINT, '_self');
+  }, []);
   // Manage the dropdown visibility
   const toggleDropdown = useCallback((event) => {
     event.preventDefault();
@@ -228,14 +215,6 @@ const App = () => {
     setFollowedChannels([]);
   }, []);
   
-  // Start the OAuth flow to authorize the app 
-  const startOAuthFlow = () => {
-    // Construct the authorization URL with the required parameters 
-    const url = `${AUTHORIZATION_ENDPOINT}?client_id=${CLIENT_ID}&redirect_uri=${REDIRECT_URI}&response_type=code&scope=user:read:email+user:read:follows`;
-    const newTab = window.open(url, "_blank"); // Open the authorization URL in a new tab 
-    window.focus(); // Focus on the new tab
-    newTab.blur(); 
-  };
   
   // Fetch followed channels using the access token 
   const fetchFollowedChannels = async (accessToken) => {
@@ -305,7 +284,41 @@ const App = () => {
       fetchFollowedChannels(accessToken);
     }
   }, [accessToken]);
-  
+
+  const refreshToken = useCallback(() => {
+    const refresh_token = localStorage.getItem('refreshToken');
+    if (!refresh_token) return;
+    const refresh = async () => {
+      try {
+        const response = await fetch(`http://localhost:3001/refresh?refresh_token=${refresh_token}`);
+        if (!response.ok) throw new Error('Failed to refresh token');
+        const data = await response.json();
+        console.log(data);
+        localStorage.setItem('accessToken', data.access_token);
+        localStorage.setItem('expiresIn', data.expires_in);
+        localStorage.setItem('refreshToken', data.refresh_token);
+        setAccessToken(data.access_token);
+      } catch (error) {
+        console.error('Error refreshing token:', error);
+      }
+    };
+
+    refresh();
+  }, []);
+
+  useEffect(() => {
+    const checkTokenExpiration = () => {
+      const accessToken = localStorage.getItem('accessToken');
+      const expirationTime = localStorage.getItem('expirationTime');
+      if (!accessToken || !expirationTime) return;
+      const currentTime = new Date().getTime();
+      if (currentTime >= expirationTime) {
+        refreshToken();
+      }
+    };
+
+    checkTokenExpiration();
+  }, [refreshToken]);
 
   return (
     <div 
@@ -327,8 +340,8 @@ const App = () => {
         handleImageClick={handleImageClick} // Handler for image click events
         handleImageChange={handleImageChange} // Handler for changing the image
         previewImageCallback={handlePreviewImage} // Callback for preview image
-        startOAuthFlow={startOAuthFlow} // Function to start OAuth authentication
-        saveSettings={saveSettings} // Function to save settings
+        startOAuthFlow={handleOAuthFlow} // Function to start OAuth authentication
+        saveSettings={refreshToken} // Function to save settings
         clearSettings={clearSettings} // Function to clear settings
         clearPreviewImage={clearPreviewImage} // Function to clear the preview image
       />
