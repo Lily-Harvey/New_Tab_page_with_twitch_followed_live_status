@@ -1,4 +1,4 @@
-# New tab homepage extension
+# New tab homepage with extension
 
 This React application allows users to display a personalized greeting and view the live status of their followed Twitch channels after authorizing with their Twitch account. Users can also customize the app's background image and their display name.
 
@@ -29,38 +29,66 @@ To use this application, you need to create a Twitch app to obtain your `CLIENT_
 
 ### Environment Variables
 
-Create a `.env` file in the root directory of your project with the following variables:
+#### Client
+Create a `.env` file in the client directory of your project with the following variables:
 
 ```env
-REACT_APP_CLIENT_ID=your_twitch_client_id
-REACT_APP_CLIENT_SECRET=your_twitch_client_secret
-REACT_APP_REDIRECT_URI=your_redirect_uri
+REACT_APP_CLIENT_ID=<Your twitch app client id>
+REACT_APP_CLIENT_SECRET=<Your Twitch app client secret>
+REACT_APP_REDIRECT_URL=<Your Backend server /auth/callback>
+REACT_APP_TOKEN_ENDPOINT=<Your Backend server /get-tokens>
+REACT_APP_AUTH_ENDPOINT=<Your Backend server /auth>
+REACT_APP_BACKEND_URL=<Your Backend server url (no '/' at the end)>
 ```
 
 Replace `your_twitch_client_id`, `your_twitch_client_secret`, and `your_redirect_uri` with the values from your Twitch app.
+
+#### Server
+Create a `.env` file in the server directory of your project with the following variables:
+```env
+CLIENT_ID=<Your twitch app client id>
+CLIENT_SECRET=<Your Twitch app client secret>
+REDIRECT_URI=<Your Backend server /auth/callback>
+FRONTEND_URI=<Your Client url (no '/' at the end)>
+```
 
 ### Installation
 
 1. **Clone the repository:**
 
     ```bash
-    git clone https://github.com/Lily-Harvey/New_Tab_extension_with_twitch_followed_live_status.git
-    cd New_Tab_extension_with_twitch_followed_live_status
+    git clone https://github.com/Lily-Harvey/New_Tab_page_with_twitch_followed_live_status.git
+    cd New_Tab_page_with_twitch_followed_live_status
     ```
 
 2. **Install dependencies:**
 
     ```bash
+    cd client
+    npm install
+    cd ../server
     npm install
     ```
 
-3. **Start the development server:**
+3. **Start the client development server:**
 
     ```bash
+    cd /client
     npm start
     ```
 
-    The app will be available at `http://localhost:3000`.
+    The client will be available at `http://localhost:3000`.
+
+4. **Start the server development server:**
+
+    In a new terminal:
+    ```bash
+    cd /server
+    node server.js
+    ```
+
+    The backend server will be available at `http://localhost:3001`.
+
 
 ## Usage
 
@@ -68,7 +96,7 @@ Replace `your_twitch_client_id`, `your_twitch_client_secret`, and `your_redirect
 
 2. **Customize Settings**: After logging in, you can customize your display name and set a background image. Click "Save Settings" to persist your changes.
 
-3. **View Followed Channels**: The app will display a list of channels you follow on Twitch. Channels that are currently live will be highlighted.
+3. **View Live Channels**: The app will display a list of channels you follow on Twitch that are currently live once authorized with Twitch.
 
 4. **Refresh Channels**: Use the refresh button in the channels section to update the live status of your followed channels.
 
@@ -79,6 +107,7 @@ This project includes browser extensions that allow you to set this application 
 ### Extension Installation
 
 #### General Instructions
+> **Notice:** If you want to use the extension without starting the development servers every time, you must find a hosting solution for the client and server and update the `.env` file with the corrected details.
 
 1. **Edit the `index.html` file**:
     - Navigate to the appropriate folder (`chrome` or `firefox`).
@@ -130,6 +159,7 @@ This project includes browser extensions that allow you to set this application 
     3. Select **This Firefox** (on the left panel).
     4. Click on **Load Temporary Add-on**.
     5. Navigate to the zip file you just created and select it.
+    6. Must get signed to keep installed without loading every full reopen of the browser
 
 2. **Using the Extension**: Once loaded, opening a new tab will display the React application.
 
@@ -172,28 +202,41 @@ Browser extension/
 │
 ├── chrome/
 │ ├── index.html // Displays the React app in an iframe as a new tab
-│ ├── manifest.json // Defines the extension's metadata for Chrome
+│ └── manifest.json // Defines the extension's metadata for Chrome
 │
 ├── firefox/
 │ ├── index.html // Displays the React app in an iframe as a new tab
-│ ├── manifest.json // Defines the extension's metadata for Firefox
+│ └── manifest.json // Defines the extension's metadata for Firefox
 │
 │
-public/
-├── index.html // The main HTML file, serves as a template for the hosted React app
-├── manifest.json // Web app manifest file (for PWA purposes, if applicable)
+Client/
 │
-src/
+├──public/
+│ ├── index.html // The main HTML file, serves as a template for the hosted React app
+│ └── manifest.json // Web app manifest file (for PWA purposes, if applicable)
 │
-├── components/
-│ ├── Greeting.js // Displays a personalized greeting
-│ ├── SettingsDropdown.js // Manages user settings and OAuth flow
-│ └── FollowedChannels.js // Displays a list of followed Twitch channels
+├──src/
+│ │── components/
+│ │ ├── Greeting.js // Displays a personalized greeting
+│ │ ├── SettingsDropdown.js // Manages user settings and OAuth flow
+│ │ └── FollowedChannels.js // Displays a list of followed Twitch channels
+│ │── App.js // Main component where everything comes together
+│ │── index.js // Entry point of the application
+│ │── index.css // Style for the application
+│ │── .env // Environment variables for Twitch API
+│ │── package-lock.json
+│ └── package.json
 │
-├── App.js // Main component where everything comes together
-├── index.js // Entry point of the application
-├── index.css // Style for the application
-└── .env // Environment variables for Twitch API
+│
+├──server/
+│ ├── server.js
+│ │── .env
+│ │── package-lock.json
+│ └── package.json
+│
+├── .gitignore
+├── LICENSE
+└── README.md
 
 ```
 
