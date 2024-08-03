@@ -29,6 +29,7 @@ const App = () => {
   const [accessToken, setAccessToken] = useState(""); // New state for access token
   const [followedChannels, setFollowedChannels] = useState([]); // New state for followed channels
   const [loading, setLoading] = useState(false); // New state for loading
+  const [notice, setNotice] = useState(""); // State for managing the notice message
 
   const fileInputRef = useRef(null); // Create a ref for the file input element
 
@@ -206,7 +207,9 @@ const App = () => {
     setName(capitalizedName);
     setShowDropdown(false);
     setPreviewImage("");
-    alert("Settings saved!");
+
+    // Show the success notice
+    setNotice("Settings saved successfully!");
   }, [name, previewImage]);
   
   // Clear the settings from local storage 
@@ -221,7 +224,6 @@ const App = () => {
     setAccessToken("");
     setFollowedChannels([]);
   }, []);
-  
   
   // Fetch followed channels using the access token 
   const fetchFollowedChannels = async (accessToken) => {
@@ -306,6 +308,8 @@ const App = () => {
         localStorage.setItem('expiresIn', data.expires_in);
         localStorage.setItem('refreshToken', data.refresh_token);
         setAccessToken(data.access_token);
+        // Show the success notice
+        setNotice("Token refreshed successfully!");
       } catch (error) {
         console.error('Error refreshing token:', error);
       }
@@ -328,12 +332,28 @@ const App = () => {
     checkTokenExpiration();
   }, [refreshToken]);
 
+  // Hide the notice after 3 seconds
+  useEffect(() => {
+    if (notice) {
+      const timer = setTimeout(() => {
+        setNotice("");
+      }, 700); // .7 second delay
+
+      return () => clearTimeout(timer); // Cleanup the timer on unmount or when notice changes
+    }
+  }, [notice]);
+
   return (
     <div 
       className="App" 
       // Set background image if provided; otherwise, no background
       style={{ background: backgroundImage ? `url(${backgroundImage}) no-repeat center center/cover` : "" }}
     >
+      {notice && (
+        <div className='notice'>
+          {notice}
+        </div>
+      )}
       {/* Button to toggle settings dropdown */}
       <button className="settings" onClick={toggleDropdown}>
         &#9881;
