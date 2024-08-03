@@ -9,8 +9,9 @@ const CLIENT_ID = process.env.REACT_APP_CLIENT_ID; // Your Twitch app client ID
 const FOLLOWED_CHANNELS_BY_USER_ID_ENDPOINT = "https://api.twitch.tv/helix/channels/followed"; // Twitch followed channels endpoint
 const USER_INFO_ENDPOINT = "https://api.twitch.tv/helix/users"; // Twitch user info endpoint
 const STREAMS_STATUS_ENDPOINT = "https://api.twitch.tv/helix/streams"; // Twitch stream status endpoint
-const GET_TOKENS_ENDPOINT = "http://localhost:3001/get-tokens"; // Local server endpoint to get tokens
-const AUTHORIZATION_ENDPOINT = "http://localhost:3001/auth"; // Local server endpoint to start OAuth flow
+const GET_TOKENS_ENDPOINT = process.env.REACT_APP_TOKEN_ENDPOINT; // Local server endpoint to get tokens
+const AUTHORIZATION_ENDPOINT = process.env.REACT_APP_AUTH_ENDPOINT; // Local server endpoint to start OAuth flow
+const BACKEND_URL = process.env.REACT_APP_BACKEND_URL; // Local server URL
 // Greetings based on the time of the day 
 const greetings = {
   morning: "Good morning",
@@ -91,7 +92,7 @@ const App = () => {
  // Check if URL is `/success` and fetch tokens
  useEffect(() => {
   const path = window.location.pathname;
-  if (path === '/success') {
+  if (path === '/success/') {
     const fetchTokens = async () => {
       try {
         const response = await fetch(GET_TOKENS_ENDPOINT);
@@ -105,7 +106,13 @@ const App = () => {
         
         setAccessToken(data.access_token);
         fetchFollowedChannels(data.access_token);
-        window.history.pushState({}, null, '/'); // Remove the code from the URL
+        // Notify the parent window to refresh
+        if (window.opener) {
+          window.opener.postMessage('refresh', '*');
+        }
+
+        // Close the current window
+        window.close();
       } catch (error) {
         console.error('Error fetching tokens:', error);
       }
@@ -116,7 +123,7 @@ const App = () => {
 }, []); // Run effect only once on component mount
 
   const handleOAuthFlow = useCallback(() => {
-    window.open(AUTHORIZATION_ENDPOINT, '_self');
+    window.open(AUTHORIZATION_ENDPOINT, '_blank');
   }, []);
   // Manage the dropdown visibility
   const toggleDropdown = useCallback((event) => {
@@ -281,6 +288,7 @@ const App = () => {
   // Refresh followed channels when the access token changes or button is clicked
   const refreshFollowedChannels = useCallback(() => {
     if (accessToken) {
+      localStorage.removeItem("liveChannels"); // Remove the live channels from local storage
       fetchFollowedChannels(accessToken);
     }
   }, [accessToken]);
@@ -290,7 +298,7 @@ const App = () => {
     if (!refresh_token) return;
     const refresh = async () => {
       try {
-        const response = await fetch(`http://localhost:3001/refresh?refresh_token=${refresh_token}`);
+        const response = await fetch(`${BACKEND_URL}/refresh?refresh_token=${refresh_token}`);
         if (!response.ok) throw new Error('Failed to refresh token');
         const data = await response.json();
         console.log(data);
@@ -341,9 +349,10 @@ const App = () => {
         handleImageChange={handleImageChange} // Handler for changing the image
         previewImageCallback={handlePreviewImage} // Callback for preview image
         startOAuthFlow={handleOAuthFlow} // Function to start OAuth authentication
-        saveSettings={refreshToken} // Function to save settings
+        saveSettings={saveSettings} // Function to save settings
         clearSettings={clearSettings} // Function to clear settings
         clearPreviewImage={clearPreviewImage} // Function to clear the preview image
+        refreshToken={refreshToken} // Function to refresh the token
       />
   
       {/* Greeting component showing a greeting message and user's name */}

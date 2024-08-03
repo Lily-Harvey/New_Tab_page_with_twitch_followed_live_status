@@ -71,7 +71,7 @@ app.get('/refresh', async (req, res) => {
         console.log(tokenResponse.data);
         let access_token = tokenResponse.data.access_token;
         let refresh_token = tokenResponse.data.refresh_token;
-        let expires_in = tokenResponse.data.expires_in;
+        expires_in = tokenResponse.data.expires_in;
     
         res.json({ access_token, refresh_token, expires_in });
     
