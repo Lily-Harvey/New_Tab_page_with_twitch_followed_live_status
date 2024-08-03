@@ -14,15 +14,25 @@ const FollowedChannels = ({ followedChannels, refreshFollowedChannels, loading }
           <button
             className="followed-channels-button"
             // Open the channel's Twitch page when clicked
-            onClick={() => window.open(`https://www.twitch.tv/${channel.broadcaster_name}`, '_blank')}
-          >
+            onClick={() => {
+              window.open(`https://www.twitch.tv/${channel.broadcaster_name}`, '_blank');
+              // Attempt to close the parent window or the iframe
+              if (window.top !== window.self) {
+                // If in an iframe, try to close the parent window
+                window.top.close();
+              } else {
+                // If not in an iframe, close the current window
+                window.close();
+              }
+            }}            
+            >
             {channel.broadcaster_name}&#128308;
-          </button>
-        </li>
-      ))}
-    </ul>
+            </button>
+          </li>
+          ))}
+        </ul>
 
-    {/* Container for the refresh button */}
+        {/* Container for the refresh button */}
     <div className="refresh-container">
       <button
         className="refresh-button"
