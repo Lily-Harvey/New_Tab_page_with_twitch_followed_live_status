@@ -13,7 +13,7 @@ const SettingsDropdown = ({
   saveSettings,
   clearSettings,
   clearPreviewImage,
-  refreshToken,
+  handleRefreshButton
 }) => {
   // Reference to the hidden file input for image upload
   const fileInputRef = useRef(null);
@@ -64,7 +64,7 @@ const SettingsDropdown = ({
           {/* Button to start OAuth flow with Twitch */}
           <li>
             {!localStorage.getItem("accessToken") && <button className="setting-dropdown-button" onClick={startOAuthFlow}>Authorize with Twitch</button>}
-            {localStorage.getItem("accessToken") && <button className="setting-dropdown-button" onClick={refreshToken}>Refresh Twitch Token</button>}
+            {localStorage.getItem("accessToken") && <button className="setting-dropdown-button" onClick={handleRefreshButton}>Refresh Twitch Token</button>}
           </li>
           
           {/* Button to save settings */}

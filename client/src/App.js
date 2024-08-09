@@ -30,6 +30,7 @@ const App = () => {
   const [followedChannels, setFollowedChannels] = useState([]); // New state for followed channels
   const [loading, setLoading] = useState(false); // New state for loading
   const [notice, setNotice] = useState(""); // State for managing the notice message
+  const [refreshButton, setrefreshButton] = useState(false); // State for managing the notice message
 
   const fileInputRef = useRef(null); // Create a ref for the file input element
 
@@ -52,11 +53,48 @@ const App = () => {
     return () => clearInterval(intervalId); // Cleanup the interval on unmount
   }, []);
 
+  // Function to handle the refresh button notice
+  const handleRefreshButtonNotice = () => {
+    setrefreshButton(true);
+    refreshToken();
+  };
+
+  // Function to refresh the access token using the refresh token
+  const refreshToken = useCallback(() => {
+    const refresh_token = localStorage.getItem('refreshToken');
+    if (!refresh_token) return;
+    const refresh = async () => {
+      try {
+        const response = await fetch(`${BACKEND_URL}/refresh?refresh_token=${refresh_token}`);
+        if (!response.ok) throw new Error('Failed to refresh token');
+        const data = await response.json();
+        console.log(data);
+        localStorage.setItem('accessToken', data.access_token);
+        localStorage.setItem('expiresIn', data.expires_in);
+        localStorage.setItem('refreshToken', data.refresh_token);
+        setAccessToken(data.access_token);
+        if (refreshButton === true){
+        // Show the success notice
+        setNotice("Token refreshed successfully!");
+        setrefreshButton(false);
+        }
+      } catch (error) {
+        console.error('Error refreshing token:', error);
+      }
+    };
+
+    refresh();
+  }, [refreshButton]);
+
   // Load settings from local storage 
   const loadSettings = useCallback(() => {
     const savedName = localStorage.getItem("name"); 
     const savedBackgroundImage = localStorage.getItem("backgroundImage");
+    const savedRefreshToken = localStorage.getItem('refreshToken');
+    if (savedRefreshToken) refreshToken();
+    const savedAccessToken = localStorage.getItem('accessToken');
 
+    if (savedAccessToken) setAccessToken(savedAccessToken);
     if (savedName) setName(savedName);
     if (savedBackgroundImage) setBackgroundImage(savedBackgroundImage);
 
@@ -64,64 +102,7 @@ const App = () => {
     if (savedLiveChannels) {
       setFollowedChannels(JSON.parse(savedLiveChannels));
     }
-  }, []);
-
-
-  // Initial setup when the app loads 
-  useEffect(() => {
-    loadSettings(); // Load settings from local storage
-    const savedAccessToken = localStorage.getItem('accessToken'); // Get the saved access token
-    // If the access token is present, set it and fetch followed channels
-    if (savedAccessToken) {
-      setAccessToken(savedAccessToken); 
-      const handlePageLoad = () => fetchFollowedChannels(savedAccessToken); 
-      window.addEventListener('load', handlePageLoad);
-      
-      return () => window.removeEventListener('load', handlePageLoad); // Cleanup the event listener on unmount
-    } // Handle OAuth redirect from Twitch
-  }, [ loadSettings]);
-  
-  // Add a message event listener to refresh the app when needed
-  useEffect(() => {
-    window.addEventListener('message', (event) => {
-      if (event.data === 'refresh') {
-        window.location.reload();
-      }
-    });
-  }, []);
-  
- // Check if URL is `/success` and fetch tokens
- useEffect(() => {
-  const path = window.location.pathname;
-  if (path === '/success/') {
-    const fetchTokens = async () => {
-      try {
-        const response = await fetch(GET_TOKENS_ENDPOINT);
-        if (!response.ok) throw new Error('Failed to fetch tokens');
-        const data = await response.json();
-        console.log(data);
-    
-        localStorage.setItem('accessToken', data.access_token);
-        localStorage.setItem('refreshToken', data.refresh_token);
-        localStorage.setItem('expiresIn', data.expires_in);
-        
-        setAccessToken(data.access_token);
-        fetchFollowedChannels(data.access_token);
-        // Notify the parent window to refresh
-        if (window.opener) {
-          window.opener.postMessage('refresh', '*');
-        }
-
-        // Close the current window
-        window.close();
-      } catch (error) {
-        console.error('Error fetching tokens:', error);
-      }
-    };
-
-    fetchTokens();
-  }
-}, []); // Run effect only once on component mount
+  }, [refreshToken]);
 
   const handleOAuthFlow = useCallback(() => {
     window.open(AUTHORIZATION_ENDPOINT, '_blank');
@@ -224,9 +205,9 @@ const App = () => {
     setAccessToken("");
     setFollowedChannels([]);
   }, []);
-  
+
   // Fetch followed channels using the access token 
-  const fetchFollowedChannels = async (accessToken) => {
+  const fetchFollowedChannels = useCallback(async (accessToken) => {
     try {
       setLoading(true); // Set loading to true
       
@@ -239,6 +220,7 @@ const App = () => {
       });
       
       if (!userInfoResponse.ok) throw new Error('User info fetch failed');
+  
       
       const userInfo = await userInfoResponse.json(); // Parse the response 
       const userId = userInfo.data[0].id; // Get the user ID from the response 
@@ -285,7 +267,62 @@ const App = () => {
     } finally {
       setLoading(false); // Set loading to false 
     }
-  };
+  }, [setLoading, setFollowedChannels]);
+
+  // Initial setup when the app loads 
+  useEffect(() => {
+    loadSettings(); // Load settings from local storage
+    const storedAccessToken = localStorage.getItem('accessToken'); // Get the access token from local storage
+    // If the access token is present, set it and fetch followed channels
+    if (storedAccessToken){
+      const handlePageLoad = () => fetchFollowedChannels(storedAccessToken); 
+      window.addEventListener('load', handlePageLoad);
+      
+      return () => window.removeEventListener('load', handlePageLoad); // Cleanup the event listener on unmount
+    } // Handle OAuth redirect from Twitch
+  }, [ loadSettings, fetchFollowedChannels]);
+  
+  // Add a message event listener to refresh the app when needed
+  useEffect(() => {
+    window.addEventListener('message', (event) => {
+      if (event.data === 'refresh') {
+        window.location.reload();
+      }
+    });
+  }, []);
+
+   // Check if URL is `/success` and fetch tokens
+ useEffect(() => {
+  const path = window.location.pathname;
+  if (path === '/success/') {
+    const fetchTokens = async () => {
+      try {
+        const response = await fetch(GET_TOKENS_ENDPOINT);
+        if (!response.ok) throw new Error('Failed to fetch tokens');
+        const data = await response.json();
+        console.log(data);
+    
+        localStorage.setItem('accessToken', data.access_token);
+        localStorage.setItem('refreshToken', data.refresh_token);
+        localStorage.setItem('expiresIn', data.expires_in);
+        
+        setAccessToken(data.access_token);
+        fetchFollowedChannels(data.access_token);
+        // Notify the parent window to refresh
+        if (window.opener) {
+          window.opener.postMessage('refresh', '*');
+        }
+
+        // Close the current window
+        window.close();
+      } catch (error) {
+        console.error('Error fetching tokens:', error);
+      }
+    };
+
+    fetchTokens();
+  }
+}, [fetchFollowedChannels]); // Run effect only once on component mount
   
   // Refresh followed channels when the access token changes or button is clicked
   const refreshFollowedChannels = useCallback(() => {
@@ -293,30 +330,8 @@ const App = () => {
       localStorage.removeItem("liveChannels"); // Remove the live channels from local storage
       fetchFollowedChannels(accessToken);
     }
-  }, [accessToken]);
+  }, [accessToken, fetchFollowedChannels]);
 
-  const refreshToken = useCallback(() => {
-    const refresh_token = localStorage.getItem('refreshToken');
-    if (!refresh_token) return;
-    const refresh = async () => {
-      try {
-        const response = await fetch(`${BACKEND_URL}/refresh?refresh_token=${refresh_token}`);
-        if (!response.ok) throw new Error('Failed to refresh token');
-        const data = await response.json();
-        console.log(data);
-        localStorage.setItem('accessToken', data.access_token);
-        localStorage.setItem('expiresIn', data.expires_in);
-        localStorage.setItem('refreshToken', data.refresh_token);
-        setAccessToken(data.access_token);
-        // Show the success notice
-        setNotice("Token refreshed successfully!");
-      } catch (error) {
-        console.error('Error refreshing token:', error);
-      }
-    };
-
-    refresh();
-  }, []);
 
   useEffect(() => {
     const checkTokenExpiration = () => {
@@ -332,7 +347,7 @@ const App = () => {
     checkTokenExpiration();
   }, [refreshToken]);
 
-  // Hide the notice after 3 seconds
+  // Hide the notice after .7 seconds
   useEffect(() => {
     if (notice) {
       const timer = setTimeout(() => {
@@ -372,7 +387,7 @@ const App = () => {
         saveSettings={saveSettings} // Function to save settings
         clearSettings={clearSettings} // Function to clear settings
         clearPreviewImage={clearPreviewImage} // Function to clear the preview image
-        refreshToken={refreshToken} // Function to refresh the token
+        handleRefreshButton={handleRefreshButtonNotice} // Function to display the refresh button notice
       />
   
       {/* Greeting component showing a greeting message and user's name */}
